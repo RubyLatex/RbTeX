@@ -1,0 +1,13 @@
+\documentclass{article}
+\usepackage{rubylatex}
+
+\begin{document}
+\begin{rbtex}
+Tex.print "Here is a loop counting from 1 to 10"
+str = ""
+for i in 1..10 do
+    str << "#{i}\\ "
+end
+Tex.print(Tex.cmath(str))
+\end{rbtex}
+\end{document}

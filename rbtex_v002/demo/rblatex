@@ -1,0 +1,422 @@
+#!/usr/local/bin/ruby
+
+require 'colorize'
+require 'open5'
+
+################################################################################
+#
+# rblatex -- The RbTeX processor.
+#
+# @author  Steven Rosendahl
+# @version 0.0.2
+#
+# This is the processor for the RbTeX package. This processor does not handle
+# any of the TeX heavy lifting; rather, the processor only looks for certain
+# environments in a supplied TeX document. After several steps, control is
+# returned back over to TeX, where pdflatex is called on the generated .rtx
+# file. If no rbtex environments were found, then this program tells pdflatex
+# to compile the original document.
+#
+# The MIT License (MIT)
+#
+# Copyright (c) 2016 Steven Rosendahl
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+# of the Software, and to permit persons to whom the Software is furnished to do
+# so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+################################################################################
+
+TEX_ENV_01_S = '\\begin{rbtex}'
+TEX_ENV_01_E = '\\end{rbtex}'
+
+RB_REQUIRE = "require './rbtex'"
+
+OUT_DELIM = "\u00b6".encode('utf-8')
+
+RB_METHOD_S = "def"
+RB_METHOD_E = "end"
+
+RB_CLASS_CREATE = "new"
+
+RB_KEYWORD_END = [
+    'begin',
+    'case',
+    # 'class',
+    'def',
+    'do',
+    'for',
+    'if',
+    # 'module',
+    'redo',
+    'rescue',
+    'unless',
+    'until',
+    'while'
+]
+
+TEX_MOD = 'Tex.print'
+
+RBTEX_INSERT_LINE = "rbtexinsertedlinenumber"
+
+TEX_FILE = ARGV[0];                                         # The user supplied TeX document
+RB_FILE = "#{TEX_FILE}.rb"                                  # The generated Ruby File
+RBTEX_OUT = "#{TEX_FILE}.aux.rtx"                           # The generated output file
+RBTEX_FILE = "#{File.basename(TEX_FILE,".tex")}.rtx"        # The generated TeX File
+$rbenvs = 0;                                                # The number of rbtex environments found
+$defstack = []                                              # A mechanism for dertermining when fcns end
+$fcnref = {}
+$console = ""
+
+def main
+    if TEX_FILE
+        result = 0
+        puts 'Welcome to rblatex v0.0.2!'
+        puts "Beginning to preprocess #{TEX_FILE}"
+        result = preprocess
+        if result == 0
+            if $rbenvs > 0
+                puts "#{$rbenvs} RbTeX envrioment(s) found"
+                puts 'Beginning interpretation of Ruby code!'
+                result = interp
+                if result == 0
+                    result = postprocess
+                else
+                    puts 'Failed to interpret.'
+                    puts 'Check stdio for the error.'
+                    return 2
+                end
+            else
+                puts 'No uses of RbTeX found'
+                puts 'Falling back to LaTeX with a --shell-escape'
+            end
+        else
+            puts 'Failed to preprocess for some reason.'
+            # puts 'Output from Ruby is'
+            # puts $console.red
+            return 2
+        end
+        if result == 0
+            puts 'Giving control over to pdflatex.'
+            puts 'Thank you for choosing RbTeX!'
+            latexit
+            return 0
+        else
+            puts 'Failed to postprocess.'
+            puts 'This is likely RbTeX\'s fault :('
+            return 2
+        end
+    else
+        puts 'No TeX file supplied. Try again with a valid TeX file!'
+    end
+end
+
+################################################################################
+# def preprocess
+#
+# Handles the inital ripping of code from the original TeX document supplied by
+# the user. Upon successful completion, the method will return 0.
+#
+################################################################################
+def preprocess
+    lineno = 0
+    shouldWrite = false
+    inFunction = false
+    printer = File.open(RB_FILE,'w')
+    scanner = File.open(TEX_FILE,'r')
+    if printer && scanner
+        printer.puts RB_REQUIRE
+        scanner.each_line do |line|
+            lineno = lineno + 1
+            if (line.include? TEX_ENV_01_E) && !determineTexCommented(line, TEX_ENV_01_E)
+                puts "Encountered #{TEX_ENV_01_E} on line #{lineno}"
+                shouldWrite = false
+            end
+            if shouldWrite
+                stripped = line.strip
+                if (stripped.include? TEX_MOD) && !determineRubyCommented(stripped, TEX_MOD) && !inFunction
+                    printer.print appendLineNumberToTexPrintCall(stripped, lineno)
+                elsif (stripped.include? RB_CLASS_CREATE) && !determineRubyCommented(stripped, RB_CLASS_CREATE) && !inFunction
+                    printer.print appendLineNumberToInitialization(stripped, lineno)
+                elsif (stripped.include? RB_METHOD_S) && !determineRubyCommented(stripped, RB_METHOD_S) && !inFunction
+                    puts "Processing function definition: found line containing #{stripped}"
+                    inFunction = true
+                    extracted = extractFunctionMeta stripped
+                    $fcnref.store(extracted[0], extracted[1])
+                    $defstack.push 1
+                    if (stripped.include? '(') && (stripped.include? ')')
+                        puts "Injection into formatted def as \( \)! Boo!"
+                    else
+                        puts "Injection into formatted def as _,_! This is preferrable."
+                    end
+                    printer.print appendLineNumberArgToFunctionDefinition stripped
+                elsif inFunction
+                    puts "Parsing #{stripped} inside function..."
+                    printer.print stripped
+                    if (line.include? TEX_MOD) && !determineRubyCommented(line, "Tex")
+                        printer.print ", #{RBTEX_INSERT_LINE}"
+                    end
+                    RB_KEYWORD_END.each do |kwd|
+                        if line.include? kwd
+                            puts "Encountered '#{kwd}'; pushing onto stack..."
+                            $defstack.push 1
+                            break
+                        end
+                    end
+                    if line.include? 'end'
+                        puts "Encountered 'end'; popping off of stack..."
+                        $defstack.pop
+                    end
+                    inFunction = $defstack.any?
+                else
+                    print "STRIPPED: #{stripped}\t"
+                    deffed = false
+                    printer.print stripped
+                    $fcnref.each do |fcn, args|
+                        if stripped.include? fcn
+                            if (line.include? '(') && (line.include? ')')
+
+                            else
+                                printer.print (args != 0) ? (", #{lineno}") : (" #{lineno}")
+                                break
+                            end
+                        end
+                    end
+                end
+                printer.puts ""
+            end
+            if (line.include? TEX_ENV_01_S) && !determineTexCommented(line, TEX_ENV_01_S)
+                puts "Encountered #{TEX_ENV_01_S} on line #{lineno}"
+                $rbenvs = $rbenvs + 1
+                shouldWrite = true
+            end
+        end
+    end
+    printer.close
+    scanner.close
+    return 0
+end
+
+################################################################################
+# def interp
+#
+# Runs the generated ruby file. This function returns the result of the system's
+# ruby call.
+#
+################################################################################
+def interp
+    rboutput = `ruby #{RB_FILE} #{RBTEX_OUT}`
+    if rboutput == ''
+        puts 'Your ruby file had no puts statments'.green
+    end
+    return 0
+end
+
+################################################################################
+# def postprocess
+#
+# Generates a new LaTeX document for compilation via pdflatex. This function
+# will return 0 upon successful completion.
+#
+################################################################################
+def postprocess
+    scannerB = File.open(TEX_FILE,'r')
+    printer = File.open(RBTEX_FILE,'w')
+
+    csv = File.readlines RBTEX_OUT
+    lineno = 1
+    csvcount = 0
+    inRb = false
+    repline = ""
+    replineno = -1
+
+    empty = File.zero?(RBTEX_OUT)
+
+    if !empty
+        scannerB.each_line do |line|
+            if csvcount < csv.length
+                sline = csv[csvcount].split(OUT_DELIM)
+                repline = sline[0]
+                replineno = sline[1].to_i
+            else
+                csvcount = -1
+            end
+            if (line.include? TEX_ENV_01_S) && !determineTexCommented(line, TEX_ENV_01_S)
+                inRb = true
+            end
+            if !inRb
+                printer.puts line
+            elsif lineno == replineno
+                puts "Injecting '#{repline}' into rtx file"
+                printer.puts repline
+                csvcount = csvcount + 1
+            end
+            if (line.include? TEX_ENV_01_E) && !determineTexCommented(line, TEX_ENV_01_E)
+                inRb = false
+            end
+            lineno = lineno + 1
+        end
+    else
+        scannerB.each_line do |line|
+            if (line.include? TEX_ENV_01_S) && !determineTexCommented(line, TEX_ENV_01_S)
+                inRb = true
+            end
+            if !inRb
+                printer.puts line
+            end
+            if (line.include? TEX_ENV_01_E) && !determineTexCommented(line, TEX_ENV_01_E)
+                inRb = false
+            end
+        end
+    end
+
+    printer.close
+    scannerB.close
+    puts 'Finishing postprocess'
+    return 0
+end
+
+################################################################################
+# def latexit
+#
+# Runs pdflatex on the generated TeX file.
+################################################################################
+def latexit
+    if $rbenvs > 0
+        puts `pdflatex --shell-escape #{RBTEX_FILE}`
+    else
+        puts `pdflatex --shell-escape #{TEX_FILE}`
+    end
+end
+
+################################################################################
+# def getLineFromString(line)
+#
+# Returns the RbTeX stored line number on a line.
+################################################################################
+def getLineFromString(line)
+    return line.slice!(line.index("\#~~!!") + 6)
+end
+
+def determineTexCommented(line, haystack)
+    in1 = line.index("\%")
+    in2 = line.index(haystack)
+    if in1 && in2
+        return in1 < in2
+    end
+    return false
+end
+
+def determineRubyCommented(line, haystack)
+    in1 = line.index("\#")
+    in2 = line.index(haystack)
+    if in1 && in2
+        return in1 < in2
+    end
+    return false
+end
+
+################################################################################
+# def extractFunctionMeta(line)
+#
+# Pulls out the function name and the number of arguments, and returns both.
+#
+# Methods in ruby can be formatted in several ways, so this method needs to
+# be able to parse out any of the different variations
+################################################################################
+def extractFunctionMeta(line)
+    res = ""
+    numret = 0
+    if line.include? '('
+        mindex = line.index('(')
+        sindex = line.index(')')
+        res = line[3..(mindex - 1)]
+        numret = line[(mindex - 1)..(sindex - 1)].length
+    else
+        spindex = (line.strip[3..line.length]).strip.index(' ')
+        if spindex != nil
+            res = line[3..spindex]
+            numret = 2
+        else
+            res = line[3..line.length]
+            numret = 0
+        end
+    end
+    return res.strip, numret
+end
+
+def appendLineNumberToTexPrintCall(line, number)
+    # if line.include? TEX_MOD && !determineRubyCommented(line, 'Tex')
+        # Three possibilities:
+        # => Tex.print(thing)
+        # => Tex.print(otherMethodCall())
+        # => Tex.print thing
+        # Output: Tex.print((thing), lineno)
+        if !line.include?("\"")
+            mline = line.gsub(/\s+/, "")
+        else
+            mline = line
+        end
+        return "#{TEX_MOD}(#{mline[9..(mline.length-1)]},#{number})"
+    # end
+end
+
+def appendLineNumberArgToFunctionDefinition(line)
+    # Four possibilities:
+    # => def fcn args       => def fcn(args,macro)
+    # => def fcn(args)      => def fcn((args),macro)
+    # => def fcn            => def fcn(macro)
+    # => def fcn()          => def fcn((macro))
+    # puts "APPEND LINE #{line}"
+    defgone = line.strip[3..line.length]
+    defgone = defgone.strip
+    # puts "APPEND DEFGONE #{defgone}"
+    if defgone.include? '('
+        defgone = defgone.gsub(/\s+/, "")
+        midn1 = defgone.index('(')
+        midn2 = defgone.index(')')
+        if defgone[midn1..midn2] == "()"
+            #case 4
+            return "def #{defgone[0..(defgone.index('(') - 1)]} #{RBTEX_INSERT_LINE}=0"
+        else
+            #case 2
+            return "def #{defgone[0..(defgone.index('(') -                                      1)]}(#{defgone[defgone.index('(')..defgone.length]},#{RBTEX_INSERT_LINE}=0)"
+        end
+    else
+        #either have case 1 or 3
+        if defgone.index(" ") != nil
+            #case 3
+            return "def #{defgone}, #{RBTEX_INSERT_LINE}=0"
+        else
+            #case 1
+            return "def #{defgone} #{RBTEX_INSERT_LINE}=0"
+        end
+    end
+end
+
+def appendLineNumberToInitialization(line, number)
+    newSpot = line.index(RB_CLASS_CREATE)
+    args = line[(newSpot + 3)..line.length].strip
+    defin = line[0..(newSpot + 3)].strip
+    if args.length != 0
+        return "#{defin}(#{args},#{number})"
+    else
+        return "#{defin}(#{number})"
+    end
+    # mline = line.gsub(/\s+/, "")
+    # return "#{TEX_MOD}(#{mline[9..(mline.length-1)]},#{number})"
+end
+
+main
