@@ -4,6 +4,8 @@
 /mmc/*
 *.docx
 
+.DS_Store
+
 /research/*.dtx
 /research/*.ins
 /research/*.sty
