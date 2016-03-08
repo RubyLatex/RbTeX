@@ -5,6 +5,9 @@ OUT_DELIM = "\u00b6".encode('utf-8')
 LOOP_START = "\#\#\#LOOP_START\#\#\#"
 LOOP_END = "\#\#\#LOOP_END\#\#\#"
 
+RBT_ENV_BEGIN = "\#\#\#RBT_ENV_BEGIN\#\#\#"
+RBT_ENV_END = "\#\#\#RBT_ENV_END\#\#\#"
+
 $pLoop = false
 
 if $out_file
@@ -14,7 +17,7 @@ end
 module Tex
 
     def Tex.print(latex, number, bundle=[])
-        printToOutFile latex, number, bundle
+        printToOutFile(latex, number, bundle)
     end
 
     def Tex.imath(math)
@@ -41,6 +44,10 @@ module Tex
             when "nloop"
                 $pLoop = false
                 file.puts LOOP_END
+            when "rbtev"
+                file.puts RBT_ENV_BEGIN
+            when "nrbtev"
+                file.puts RBT_ENV_END
             else
                 file.puts $pLoop ? "#{line}" : "#{line}#{OUT_DELIM}#{number}"
             end

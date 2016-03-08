@@ -51,6 +51,8 @@ RB_METHOD_E = "end"
 
 LOOP_START = "\#\#\#LOOP_START\#\#\#"
 LOOP_END = "\#\#\#LOOP_END\#\#\#"
+RBT_ENV_BEGIN = "\#\#\#RBT_ENV_BEGIN\#\#\#"
+RBT_ENV_END = "\#\#\#RBT_ENV_END\#\#\#"
 
 RB_CLASS_CREATE = "new"
 
@@ -156,6 +158,7 @@ def preprocess
             lineno = lineno + 1
             if (line.include? TEX_ENV_01_E) && !determineTexCommented(line, TEX_ENV_01_E)
                 puts "Encountered #{TEX_ENV_01_E} on line #{lineno}"
+                printer.puts "Tex.print('', 8888, ['nrbtev'])"
                 shouldWrite = false
             end
             if shouldWrite
@@ -237,6 +240,7 @@ def preprocess
             end
             if (line.include? TEX_ENV_01_S) && !determineTexCommented(line, TEX_ENV_01_S)
                 puts "Encountered #{TEX_ENV_01_S} on line #{lineno}"
+                # printer.puts "Tex.print('', 0, ['rbtev'])"
                 $rbenvs = $rbenvs + 1
                 shouldWrite = true
             end
@@ -274,8 +278,6 @@ def postprocess
     printer = File.open(RBTEX_FILE,'w')
     scannerA = nil
 
-    ## TODO -- CHANGE THIS
-    # csv = File.readlines RBTEX_OUT
     lineno = 1
     csvcount = 0
     inRb = false
@@ -293,12 +295,15 @@ def postprocess
             end
             if !inRb
                 # if we aren't in an rbtex environment, just go ahead and print the line verbatim
-                printer.puts line
+                if !(line.include? LOOP_START)
+                    printer.puts line
+                end
             else
                 # grab a line from the scanner
                 outline = scannerA.gets
                 puts "OUTLINE: #{outline}"
                 if outline != nil
+                    # TODO check the case where the line is signifying the end of a rbtex env
                     if outline.include? LOOP_START
                         # there was once a loop, so print out the stuff all at once
                         while (outline = scannerA.gets)
@@ -307,6 +312,15 @@ def postprocess
                             end
                             printer.puts (outline.split(OUT_DELIM)[0])
                         end
+                    elsif outline.include? RBT_ENV_END
+                        nln = scannerB.gets
+                        while nln != nil
+                            if nln.include? TEX_ENV_01_E
+                                break
+                            end
+                            nln = scannerB.gets
+                        end
+                        inRb = false
                     else
                         # just go along as normal
                         split = outline.split(OUT_DELIM)
@@ -314,8 +328,8 @@ def postprocess
                         replineno = split[1]
                         repline = split[0]
                         # if lineno == replineno
-                            puts "Injecting '#{repline}' into rtx file"
-                            printer.puts repline
+                        puts "Injecting '#{repline}' into rtx file"
+                        printer.puts repline
                         # end
                     end
                 end
@@ -341,8 +355,21 @@ def postprocess
 
     printer.close
     scannerB.close
+    finalScan
     puts 'Finishing postprocess'
     return 0
+end
+
+def finalScan
+    f = File.open(RBTEX_FILE, 'r+')
+    f.each do |line|
+        if (line.include? LOOP_END) || (line.include? LOOP_START)
+            f.seek(-1 * line.length, IO::SEEK_CUR)
+            f.write(' ' * (line.length - 1))
+            f.puts("")
+        end
+    end
+    f.close()
 end
 
 ################################################################################

@@ -5,16 +5,29 @@
 \begin{rbtex}
 Tex.print "Here is a loop counting from 1 to 10:"
 def doLoop
-    str = ""
-    for i in 1..10 do
-        Tex.print "#{i}"
+    10.times do
+        3.times do
+            2.times do
+                Tex.print "Hello!"
+            end
+        end
     end
-    #Tex.print(Tex.cmath(str))
 end
-
-#doLoop
-
 doLoop
-Tex.print "here is a random line"
+Tex.print ""
+\end{rbtex}
+Native TeX\\
+\begin{rbtex}
+Tex.print ""
+Tex.print "looping again"
+doLoop
+Tex.print ""
+\end{rbtex}
+More native tex\\
+
+
+\begin{rbtex}
+Tex.print "one more loop"
+doLoop
 \end{rbtex}
 \end{document}
