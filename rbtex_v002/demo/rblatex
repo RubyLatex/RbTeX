@@ -49,6 +49,9 @@ OUT_DELIM = "\u00b6".encode('utf-8')
 RB_METHOD_S = "def"
 RB_METHOD_E = "end"
 
+LOOP_START = "\#\#\#LOOP_START\#\#\#"
+LOOP_END = "\#\#\#LOOP_END\#\#\#"
+
 RB_CLASS_CREATE = "new"
 
 RB_KEYWORD_END = [
@@ -67,6 +70,15 @@ RB_KEYWORD_END = [
     'while'
 ]
 
+RB_LOOP_SIGNIT = [
+    'while',
+    'for',
+    'until',
+    '.times',
+    '.upto',
+    '.each'
+]
+
 TEX_MOD = 'Tex.print'
 
 RBTEX_INSERT_LINE = "rbtexinsertedlinenumber"
@@ -77,6 +89,7 @@ RBTEX_OUT = "#{TEX_FILE}.aux.rtx"                           # The generated outp
 RBTEX_FILE = "#{File.basename(TEX_FILE,".tex")}.rtx"        # The generated TeX File
 $rbenvs = 0;                                                # The number of rbtex environments found
 $defstack = []                                              # A mechanism for dertermining when fcns end
+$loopstack = []
 $fcnref = {}
 $console = ""
 
@@ -134,6 +147,7 @@ def preprocess
     lineno = 0
     shouldWrite = false
     inFunction = false
+    inLoop = false
     printer = File.open(RB_FILE,'w')
     scanner = File.open(TEX_FILE,'r')
     if printer && scanner
@@ -166,18 +180,37 @@ def preprocess
                     puts "Parsing #{stripped} inside function..."
                     printer.print stripped
                     if (line.include? TEX_MOD) && !determineRubyCommented(line, "Tex")
-                        printer.print ", #{RBTEX_INSERT_LINE}"
+                        printer.print inLoop ?
+                            ", (#{RBTEX_INSERT_LINE}=#{RBTEX_INSERT_LINE}+1)" :
+                            ", #{RBTEX_INSERT_LINE}"
                     end
+                    #determine if the line contains a block keyword
                     RB_KEYWORD_END.each do |kwd|
                         if line.include? kwd
                             puts "Encountered '#{kwd}'; pushing onto stack..."
-                            $defstack.push 1
+                            $defstack.push kwd
+                            break
+                        end
+                    end
+                    #determine if the line contains a looping keyword
+                    RB_LOOP_SIGNIT.each do |kwd|
+                        if line.include? kwd
+                            puts "Located a loop of the form '#{kwd}'; pushing onto stack..."
+                            $loopstack.push kwd
+                            printer.print "Tex.print('',#{RBTEX_INSERT_LINE},['loop'])"
                             break
                         end
                     end
                     if line.include? 'end'
                         puts "Encountered 'end'; popping off of stack..."
                         $defstack.pop
+                        if inLoop
+                            $loopstack.pop
+                            inLoop = $loopstack.any?
+                            if !inLoop
+                                printer.puts "Tex.print('',#{RBTEX_INSERT_LINE},['nloop'])"
+                            end
+                        end
                     end
                     inFunction = $defstack.any?
                 else
@@ -246,9 +279,16 @@ def postprocess
 
     if !empty
         scannerB.each_line do |line|
+            if line == LOOP_START
+                loopline = ""
+                while (loopline = scannerB.gets) != LOOP_END
+                    printer.puts loopline
+                end
+            end
             if csvcount < csv.length
                 sline = csv[csvcount].split(OUT_DELIM)
                 repline = sline[0]
+                puts "REPLINE: #{repline}"
                 replineno = sline[1].to_i
             else
                 csvcount = -1

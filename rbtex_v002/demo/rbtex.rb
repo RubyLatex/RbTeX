@@ -2,14 +2,17 @@ $out_file = ARGV[0]
 
 OUT_DELIM = "\u00b6".encode('utf-8')
 
+LOOP_START = "\#\#\#LOOP_START\#\#\#"
+LOOP_END = "\#\#\#LOOP_END\#\#\#"
+
 if $out_file
     File.new($out_file,"w").close
 end
 
 module Tex
 
-    def Tex.print(latex, number)
-        printToOutFile latex, number
+    def Tex.print(latex, number, bundle=[])
+        printToOutFile latex, number, bundle
     end
 
     def Tex.imath(math)
@@ -24,10 +27,21 @@ module Tex
         return "\\begin{center}#{latex}\\end{center}"
     end
 
-    def Tex.printToOutFile(line, number)
-        File.open($out_file, 'a') do |file|
+    def Tex.printToOutFile(line, number, bundle)
+        file = File.open($out_file, 'a')
+        if bundle.length == 0
             file.puts "#{line}#{OUT_DELIM}#{number}"
+        else
+            case bundle[0]
+            when "loop"
+                file.puts LOOP_START
+            when "nloop"
+                file.puts LOOP_END
+            else
+                file.puts "#{line}#{OUT_DELIM}#{number}"
+            end
         end
+        file.close
     end
 
     class Table
