@@ -197,18 +197,22 @@ def preprocess
                         if line.include? kwd
                             puts "Located a loop of the form '#{kwd}'; pushing onto stack..."
                             $loopstack.push kwd
-                            printer.print "Tex.print('',#{RBTEX_INSERT_LINE},['loop'])"
+                            inLoop = true
+                            printer.seek(-1 * (stripped.length), IO::SEEK_CUR)
+                            printer.print "\nTex.print('',#{RBTEX_INSERT_LINE},['loop'])"
+                            printer.print "\n#{stripped}"
                             break
                         end
                     end
                     if line.include? 'end'
                         puts "Encountered 'end'; popping off of stack..."
                         $defstack.pop
+                        puts "LOOPSTACK SIZE: #{$loopstack.any?}"
                         if inLoop
                             $loopstack.pop
                             inLoop = $loopstack.any?
                             if !inLoop
-                                printer.puts "Tex.print('',#{RBTEX_INSERT_LINE},['nloop'])"
+                                printer.puts "\nTex.print('',#{RBTEX_INSERT_LINE},['nloop'])"
                             end
                         end
                     end
@@ -228,6 +232,7 @@ def preprocess
                         end
                     end
                 end
+                printer.puts ""
                 printer.puts ""
             end
             if (line.include? TEX_ENV_01_S) && !determineTexCommented(line, TEX_ENV_01_S)
@@ -267,8 +272,10 @@ end
 def postprocess
     scannerB = File.open(TEX_FILE,'r')
     printer = File.open(RBTEX_FILE,'w')
+    scannerA = nil
 
-    csv = File.readlines RBTEX_OUT
+    ## TODO -- CHANGE THIS
+    # csv = File.readlines RBTEX_OUT
     lineno = 1
     csvcount = 0
     inRb = false
@@ -278,30 +285,40 @@ def postprocess
     empty = File.zero?(RBTEX_OUT)
 
     if !empty
+        # process the out file and the original tex file
+        scannerA = File.open(RBTEX_OUT)
         scannerB.each_line do |line|
-            if line == LOOP_START
-                loopline = ""
-                while (loopline = scannerB.gets) != LOOP_END
-                    printer.puts loopline
-                end
-            end
-            if csvcount < csv.length
-                sline = csv[csvcount].split(OUT_DELIM)
-                repline = sline[0]
-                puts "REPLINE: #{repline}"
-                replineno = sline[1].to_i
-            else
-                csvcount = -1
-            end
             if (line.include? TEX_ENV_01_S) && !determineTexCommented(line, TEX_ENV_01_S)
                 inRb = true
             end
             if !inRb
+                # if we aren't in an rbtex environment, just go ahead and print the line verbatim
                 printer.puts line
-            elsif lineno == replineno
-                puts "Injecting '#{repline}' into rtx file"
-                printer.puts repline
-                csvcount = csvcount + 1
+            else
+                # grab a line from the scanner
+                outline = scannerA.gets
+                puts "OUTLINE: #{outline}"
+                if outline != nil
+                    if outline.include? LOOP_START
+                        # there was once a loop, so print out the stuff all at once
+                        while (outline = scannerA.gets)
+                            if outline.include? LOOP_END
+                                break
+                            end
+                            printer.puts (outline.split(OUT_DELIM)[0])
+                        end
+                    else
+                        # just go along as normal
+                        split = outline.split(OUT_DELIM)
+                        puts "SPLIT: #{split}"
+                        replineno = split[1]
+                        repline = split[0]
+                        # if lineno == replineno
+                            puts "Injecting '#{repline}' into rtx file"
+                            printer.puts repline
+                        # end
+                    end
+                end
             end
             if (line.include? TEX_ENV_01_E) && !determineTexCommented(line, TEX_ENV_01_E)
                 inRb = false

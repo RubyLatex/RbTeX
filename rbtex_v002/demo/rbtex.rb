@@ -5,6 +5,8 @@ OUT_DELIM = "\u00b6".encode('utf-8')
 LOOP_START = "\#\#\#LOOP_START\#\#\#"
 LOOP_END = "\#\#\#LOOP_END\#\#\#"
 
+$pLoop = false
+
 if $out_file
     File.new($out_file,"w").close
 end
@@ -34,11 +36,13 @@ module Tex
         else
             case bundle[0]
             when "loop"
+                $pLoop = true
                 file.puts LOOP_START
             when "nloop"
+                $pLoop = false
                 file.puts LOOP_END
             else
-                file.puts "#{line}#{OUT_DELIM}#{number}"
+                file.puts $pLoop ? "#{line}" : "#{line}#{OUT_DELIM}#{number}"
             end
         end
         file.close
