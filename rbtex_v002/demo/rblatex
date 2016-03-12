@@ -1,7 +1,6 @@
 #!/usr/local/bin/ruby
 
 require 'colorize'
-require 'open5'
 
 ################################################################################
 #
@@ -59,12 +58,10 @@ RB_CLASS_CREATE = "new"
 RB_KEYWORD_END = [
     'begin',
     'case',
-    # 'class',
     'def',
     'do',
     'for',
     'if',
-    # 'module',
     'redo',
     'rescue',
     'unless',
@@ -119,8 +116,6 @@ def main
             end
         else
             puts 'Failed to preprocess for some reason.'
-            # puts 'Output from Ruby is'
-            # puts $console.red
             return 2
         end
         if result == 0
@@ -163,10 +158,13 @@ def preprocess
             end
             if shouldWrite
                 stripped = line.strip
+                # parse lines containing the Tex.print method
                 if (stripped.include? TEX_MOD) && !determineRubyCommented(stripped, TEX_MOD) && !inFunction
                     printer.print appendLineNumberToTexPrintCall(stripped, lineno)
+                # parse situations containing classes
                 elsif (stripped.include? RB_CLASS_CREATE) && !determineRubyCommented(stripped, RB_CLASS_CREATE) && !inFunction
                     printer.print appendLineNumberToInitialization(stripped, lineno)
+                # parse methods
                 elsif (stripped.include? RB_METHOD_S) && !determineRubyCommented(stripped, RB_METHOD_S) && !inFunction
                     puts "Processing function definition: found line containing #{stripped}"
                     inFunction = true
@@ -179,6 +177,7 @@ def preprocess
                         puts "Injection into formatted def as _,_! This is preferrable."
                     end
                     printer.print appendLineNumberArgToFunctionDefinition stripped
+                # if we are in a function, things work differently
                 elsif inFunction
                     puts "Parsing #{stripped} inside function..."
                     printer.print stripped
@@ -210,7 +209,7 @@ def preprocess
                     if line.include? 'end'
                         puts "Encountered 'end'; popping off of stack..."
                         $defstack.pop
-                        puts "LOOPSTACK SIZE: #{$loopstack.any?}"
+                        # puts "LOOPSTACK SIZE: #{$loopstack.any?}"
                         if inLoop
                             $loopstack.pop
                             inLoop = $loopstack.any?
@@ -221,8 +220,17 @@ def preprocess
                     end
                     inFunction = $defstack.any?
                 else
-                    print "STRIPPED: #{stripped}\t"
+                    print "STRIPPED: #{stripped}  "
                     deffed = false
+                    #look for looping mechanisms first
+                    RB_LOOP_SIGNIT.each do |loopsig|
+                        if stripped.include? loopsig
+                            $loopstack.push loopsig
+                            # inLoop = true
+                            # printer.seek(-1 * (stripped.length), IO::SEEK_CUR)
+                            printer.puts "\nTex.print('',0,['loop'])"
+                        end
+                    end
                     printer.print stripped
                     $fcnref.each do |fcn, args|
                         if stripped.include? fcn
@@ -240,7 +248,6 @@ def preprocess
             end
             if (line.include? TEX_ENV_01_S) && !determineTexCommented(line, TEX_ENV_01_S)
                 puts "Encountered #{TEX_ENV_01_S} on line #{lineno}"
-                # printer.puts "Tex.print('', 0, ['rbtev'])"
                 $rbenvs = $rbenvs + 1
                 shouldWrite = true
             end
@@ -303,7 +310,6 @@ def postprocess
                 outline = scannerA.gets
                 puts "OUTLINE: #{outline}"
                 if outline != nil
-                    # TODO check the case where the line is signifying the end of a rbtex env
                     if outline.include? LOOP_START
                         # there was once a loop, so print out the stuff all at once
                         while (outline = scannerA.gets)
@@ -327,10 +333,8 @@ def postprocess
                         puts "SPLIT: #{split}"
                         replineno = split[1]
                         repline = split[0]
-                        # if lineno == replineno
                         puts "Injecting '#{repline}' into rtx file"
                         printer.puts repline
-                        # end
                     end
                 end
             end
@@ -364,6 +368,11 @@ def finalScan
     f = File.open(RBTEX_FILE, 'r+')
     f.each do |line|
         if (line.include? LOOP_END) || (line.include? LOOP_START)
+            f.seek(-1 * line.length, IO::SEEK_CUR)
+            f.write(' ' * (line.length - 1))
+            f.puts("")
+        end
+        if line.include? RBT_ENV_END
             f.seek(-1 * line.length, IO::SEEK_CUR)
             f.write(' ' * (line.length - 1))
             f.puts("")
