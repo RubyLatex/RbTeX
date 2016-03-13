@@ -32,6 +32,14 @@ module Tex
         return "\\begin{center}#{latex}\\end{center}"
     end
 
+    def Tex.n
+        return "\\\\"
+    end
+
+    def Tex.logo
+        return "$\\RbTeX$"
+    end
+
     def Tex.printToOutFile(line, number, bundle)
         file = File.open($out_file, 'a')
         if bundle.length == 0

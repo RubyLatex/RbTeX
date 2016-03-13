@@ -89,6 +89,7 @@ RBTEX_FILE = "#{File.basename(TEX_FILE,".tex")}.rtx"        # The generated TeX 
 $rbenvs = 0;                                                # The number of rbtex environments found
 $defstack = []                                              # A mechanism for dertermining when fcns end
 $loopstack = []
+$customclasses = []
 $fcnref = {}
 $console = ""
 
@@ -158,12 +159,27 @@ def preprocess
             end
             if shouldWrite
                 stripped = line.strip
+                #parse custome class names
+                if stripped.include? 'class'
+                    $customclasses.push stripped[stripped.index(' ')..stripped.length].strip
+                end
                 # parse lines containing the Tex.print method
                 if (stripped.include? TEX_MOD) && !determineRubyCommented(stripped, TEX_MOD) && !inFunction
                     printer.print appendLineNumberToTexPrintCall(stripped, lineno)
                 # parse situations containing classes
                 elsif (stripped.include? RB_CLASS_CREATE) && !determineRubyCommented(stripped, RB_CLASS_CREATE) && !inFunction
-                    printer.print appendLineNumberToInitialization(stripped, lineno)
+                    shoudlDoPrintThing = false
+                    $customclasses.each do |saved|
+                        if stripped.include? saved
+                            shoudlDoPrintThing = true
+                            break
+                        end
+                    end
+                    if shoudlDoPrintThing
+                        printer.print appendLineNumberToInitialization(stripped, lineno)
+                    else
+                        printer.print stripped
+                    end
                 # parse methods
                 elsif (stripped.include? RB_METHOD_S) && !determineRubyCommented(stripped, RB_METHOD_S) && !inFunction
                     puts "Processing function definition: found line containing #{stripped}"
@@ -226,8 +242,6 @@ def preprocess
                     RB_LOOP_SIGNIT.each do |loopsig|
                         if stripped.include? loopsig
                             $loopstack.push loopsig
-                            # inLoop = true
-                            # printer.seek(-1 * (stripped.length), IO::SEEK_CUR)
                             printer.puts "\nTex.print('',0,['loop'])"
                         end
                     end
@@ -508,8 +522,6 @@ def appendLineNumberToInitialization(line, number)
     else
         return "#{defin}(#{number})"
     end
-    # mline = line.gsub(/\s+/, "")
-    # return "#{TEX_MOD}(#{mline[9..(mline.length-1)]},#{number})"
 end
 
 main
