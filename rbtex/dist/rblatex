@@ -41,7 +41,7 @@ require 'colorize'
 TEX_ENV_01_S = '\\begin{rbtex}'
 TEX_ENV_01_E = '\\end{rbtex}'
 
-RB_REQUIRE = "require './rbtex'"
+RB_REQUIRE = "require 'rbtex'"
 
 OUT_DELIM = "\u00b6".encode('utf-8')
 
