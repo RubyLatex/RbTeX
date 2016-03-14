@@ -27,12 +27,17 @@ sudo bash -c "cp './rubylatex.dtx' $TEX_LOC_REAL"               #move the .dtx f
 sudo bash -c "cp './rubylatex.sty' $TEX_LOC_REAL"               #move the .sty file
 sudo bash -c "cp './rblatex' $TEX_LOC_REAL"                     #move the rblatex program
 cd ~/../../usr/
-cd "${TEX_LOC%/*}"                                              #cd into the rbtex dir
+cd "${TEX_LOC%/*}"
 cd ..
-cd rbtex
+cd rbtex                                                        #cd into the rbtex dir
+RUBY=$(which ruby)                                              #get location of this user's ruby
+sed -i "1i#!$RUBY" "rblatex"                                    #add the ruby shebang to top of rblatex
 sudo chmod 755 rblatex                                          #make rblatex executable
 echo "Done installing LaTeX side. Moving on to Ruby."
 
+echo "Installing colorize..."
+sudo gem install colorize                                       #install the colorize gem
+echo "Installing rbtex..."
 sudo gem install rbtex                                          #install the rbtex gem
 
 cd ~
@@ -41,12 +46,12 @@ RBT="rblatex"
 RBTEX="$TEX_LOC_REAL/$RBT"
 BP_A="# RbTeX alias"
 BP_B="alias rblatex=\"$RBTEX\""
+if grep -q "$BP_A" ~/.bash_profile; then
+    echo "You've installed rbtex before!"                       #don't do anything to the bash_profile
+    echo "Thanks, and enjoy!"
+else
+    echo "\n$BP_A\n$BP_B" >> .bash_profile                      #make an alias in the bash_profile
+fi
 
-# TODO -- Fix sed usage
-
-sudo sed -i -e "/$BP_A/d" "~/.bash_profile"                     #remove the existing rbtex alias
-sudo sed -i -e "/$BP_B/d" "~/.bash_profile"                     #remove the existing rbtex alias
-echo "\n$BP_A\n$BP_B" >> .bash_profile                          #make an alias in the bash_profile
-
-cd "$OG_DIR"
+cd "$OG_DIR"                                                    #cleanup the forked repo
 rm -rf "RbTeX"
