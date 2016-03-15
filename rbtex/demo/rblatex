@@ -197,10 +197,13 @@ def preprocess
                 elsif inFunction
                     puts "Parsing #{stripped} inside function..."
                     printer.print stripped
+                    #format the line with extra parentheses
                     if (line.include? TEX_MOD) && !determineRubyCommented(line, "Tex")
+                        printer.seek(-1 * (stripped.length), IO::SEEK_CUR)
+                        printer.print "#{TEX_MOD}(#{stripped[TEX_MOD.length..stripped.length]}"
                         printer.print inLoop ?
-                            ", (#{RBTEX_INSERT_LINE}=#{RBTEX_INSERT_LINE}+1)" :
-                            ", #{RBTEX_INSERT_LINE}"
+                            ", (#{RBTEX_INSERT_LINE}=#{RBTEX_INSERT_LINE}+1))" :
+                            ", #{RBTEX_INSERT_LINE})"
                     end
                     #determine if the line contains a block keyword
                     RB_KEYWORD_END.each do |kwd|
@@ -225,7 +228,6 @@ def preprocess
                     if line.include? 'end'
                         puts "Encountered 'end'; popping off of stack..."
                         $defstack.pop
-                        # puts "LOOPSTACK SIZE: #{$loopstack.any?}"
                         if inLoop
                             $loopstack.pop
                             inLoop = $loopstack.any?
@@ -249,7 +251,7 @@ def preprocess
                     $fcnref.each do |fcn, args|
                         if stripped.include? fcn
                             if (line.include? '(') && (line.include? ')')
-
+                                puts "PARENTHESSES"
                             else
                                 printer.print (args != 0) ? (", #{lineno}") : (" #{lineno}")
                                 break

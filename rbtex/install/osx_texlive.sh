@@ -1,3 +1,5 @@
+# TODO -- add support for zsh, sh
+
 #The install script for os x
 
 #check that the user is running in root

@@ -7,29 +7,29 @@ Hello! This is an example of using $\RbTeX$! The goal of $\RbTeX$ is to provide 
 compilation of \LaTeX\ documents. Let's get started!\\
 
 \begin{rbtex}
-    Tex.print "Hi! I'm being printed from a Tex.print line inside Ruby."
-    Tex.print "I really like to say hello, so I'm going to say it a lot!"
+    #Tex.print "Hi! I'm being printed from a Tex.print line inside Ruby."
+    #Tex.print "I really like to say hello, so I'm going to say it a lot!"
 
-    Tex.print(Tex.n << Tex.n)
+    #Tex.print(Tex.n << Tex.n)
 
-    10.times do
-        Tex.print "Hello, friend!"
-    end
+    #10.times do
+    #    Tex.print "Hello, friend!"
+    #end
 
-    Tex.print "#{Tex.n}#{Tex.n}"
+    #Tex.print "#{Tex.n}#{Tex.n}"
 
-    Tex.print "I can also easily typeset math. Unfortunately, you will have to escape the backslash character, but that's not too bad."
+    #Tex.print "I can also easily typeset math. Unfortunately, you will have to escape the backslash character, but that's not too bad."
 
-    Tex.print("My favorite equation is " << Tex.imath("f(x) = x^{2}" << "!"))
-    Tex.print("This isn't really the case, but it is a nice equation.")
-    Tex.print(Tex.logo << " supports all of the paradigms of Ruby. For example, I can create classes and use them later.")
+    #Tex.print("My favorite equation is " << Tex.imath("f(x) = x^{2}" << "!"))
+    #Tex.print("This isn't really the case, but it is a nice equation.")
+    #Tex.print(Tex.logo << " supports all of the paradigms of Ruby. For example, I can create classes and use them later.")
 
-    Tex.print "#{Tex.n}#{Tex.n}"
+    #Tex.print "#{Tex.n}#{Tex.n}"
 
     class MyClass
 
         def initialize
-            Tex.print "Hi! I'm a class being initialized."
+            Tex.print("Hi! I'm a class being initialized.")
         end
 
     end
