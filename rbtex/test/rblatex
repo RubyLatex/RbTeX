@@ -123,10 +123,7 @@ def main
         if result == 0
             puts 'Giving control over to pdflatex.'
             puts 'Thank you for choosing RbTeX!'
-            Thread.new {
-                latexit
-            }.join
-            puts 'done'
+            latexit
             exit 0
         else
             puts 'Failed to postprocess.'
@@ -410,7 +407,6 @@ def latexit
     else
         puts `pdflatex --shell-escape #{TEX_FILE}`
     end
-    return 0
 end
 
 ################################################################################
