@@ -123,11 +123,15 @@ def main
         if result == 0
             puts 'Giving control over to pdflatex.'
             puts 'Thank you for choosing RbTeX!'
-            Thread.new {
-                latexit
-            }.join
-            puts 'done'
-            exit 0
+            # Thread.new {
+            result = latexit
+            # }.join
+            if result == 0
+                puts 'done'
+                exit 0
+            else
+                puts "Oops, there was a LaTeX error".colorize(:red).on_black
+            end
         else
             puts 'Failed to postprocess.'
             puts 'This is likely RbTeX\'s fault :('
@@ -405,12 +409,13 @@ end
 # Runs pdflatex on the generated TeX file.
 ################################################################################
 def latexit
+    ret = -1
     if $rbenvs > 0
-        puts `pdflatex --shell-escape #{RBTEX_FILE}`
+        ret = system("pdflatex --shell-escape #{RBTEX_FILE}") ? 0 : -1
     else
-        puts `pdflatex --shell-escape #{TEX_FILE}`
+        ret = system("pdflatex --shell-escape #{TEX_FILE}") ? 0 : -1
     end
-    return 0
+    return ret
 end
 
 ################################################################################
