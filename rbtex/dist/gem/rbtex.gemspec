@@ -2,7 +2,7 @@ require 'find'
 
 Gem::Specification.new do |s|
     s.name = 'rbtex'
-    s.version = '0.1.4'
+    s.version = '0.1.5'
     s.date = '2016-03-26'
     s.description = 'The rubylatex gem'
     s.summary = 'RbTeX'

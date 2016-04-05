@@ -167,7 +167,7 @@ def preprocess
             end
             if shouldWrite
                 stripped = line.strip
-                #parse custome class names
+                #parse custom class names
                 if stripped.include? 'class'
                     $customclasses.push stripped[stripped.index(' ')..stripped.length].strip
                 end
@@ -220,7 +220,8 @@ def preprocess
                     end
                     #determine if the line contains a looping keyword
                     RB_LOOP_SIGNIT.each do |kwd|
-                        if line.include? kwd
+                        # if line.include? kwd
+                        if loopcheck(kwd,line)
                             puts "Located a loop of the form '#{kwd}'; pushing onto stack..."
                             $loopstack.push kwd
                             inLoop = true
@@ -248,7 +249,8 @@ def preprocess
                     deffed = false
                     #look for looping mechanisms first
                     RB_LOOP_SIGNIT.each do |loopsig|
-                        if stripped.include? loopsig
+                        # if stripped.include? loopsig
+                        if loopcheck(loopsig, stripped)
                             $loopstack.push loopsig
                             printer.puts "\nTex.print('',0,['loop'])"
                         end
@@ -532,6 +534,30 @@ def appendLineNumberToInitialization(line, number)
     else
         return "#{defin}(#{number})"
     end
+end
+
+def loopcheck(word, line)
+    ret = line.include? word
+    index = 0
+    indexa = -1
+    indexb = -1
+    line.split("").each do |char|
+        if char == "\"" && indexa == -1
+            indexa = index
+        elsif char == "\"" && indexb == -1
+            indexb = index
+        end
+        if indexa != -1 && indexb != -1
+            substr = line[indexa..indexb]
+            indexa = -1
+            indexb = -1
+            if substr.include? word
+                return false
+            end
+        end
+        index = index + 1
+    end
+    return ret
 end
 
 main
