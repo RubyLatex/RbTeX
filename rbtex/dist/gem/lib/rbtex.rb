@@ -65,16 +65,17 @@ module Tex
 
     class Table
 
-        def initialize(twodee, rowlines=true)
+        def initialize(twodee, tabx=false)
             @array = twodee
-            @rowlines = rowlines
+            # @rowlines = rowlines
+            @tabx = tabx
         end
 
         def create
-            pme = "\\begin{tabular}{|"
+            pme = "\\begin{#{@tabx ? "longtabu" : "tabular"}}#{@tabx ? "{\\textwidth}" : ""}{|"
             i = 0
             while i < @array[0].length
-                pme << "c|"
+                pme << "#{@tabx ? "X|" : "c|"}"
                 i = i + 1
             end
             pme << "} "
@@ -90,7 +91,7 @@ module Tex
                 end
                 pme << "\\\\ "
             end
-            pme << "\\hline \\end{tabular}"
+            pme << "\\hline \\end{#{@tabx ? "longtabu" : "tabular"}}"
             return pme
         end
 
