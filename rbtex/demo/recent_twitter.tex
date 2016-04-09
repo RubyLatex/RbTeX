@@ -48,6 +48,7 @@ Here are some tweets:\\\\
                     ntw = tweet.text.gsub('#','\\#')
                     ntw = ntw.gsub('_','\\_')
                     ntw = ntw.gsub('&','\\&')
+                    ntw = ntw.gsub('$','\\$')
                     # tweetString << ntw
                     Tex.print ntw
                     Tex.print ""

@@ -1,8 +1,11 @@
 require 'find'
 
+LANG="en_US.UTF-8"
+LC_ALL="en_US.UTF-8"
+
 Gem::Specification.new do |s|
     s.name = 'rbtex'
-    s.version = '0.1.6'
+    s.version = '0.1.7'
     s.date = '2016-03-26'
     s.description = 'The rubylatex gem'
     s.summary = 'RbTeX'
