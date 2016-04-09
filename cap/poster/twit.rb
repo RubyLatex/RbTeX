@@ -6,4 +6,3 @@ client.search("#", result_type: 'recent', lang: 'en').take(10).each do |tweet|
     Tex.print ntw
     Tex.print ""
 end
-Tex.print tweetString

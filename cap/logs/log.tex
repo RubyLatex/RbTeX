@@ -1,13 +1,12 @@
 \documentclass{hw}
 \usepackage{rubylatex}
 \usepackage{tabularx}
-\usepackage{longtable}
-\usepackage{tabu}
+
+\usepackage{atbegshi}% http://ctan.org/pkg/atbegshi
+\AtBeginDocument{\AtBeginShipoutNext{\AtBeginShipoutDiscard}}
 
 \begin{document}
-
 \section*{Capstone Logs}
-
 \begin{rbtex}
 tableu = [
     ["Task","Hours","Notes","Done"],
@@ -26,15 +25,21 @@ tableu = [
     ["Build in support for methods","2","Need to parse the ruby code","No"],
     ["Begin working on Tables","2","Will move it into a separate class","No"],
     ["Meet with Dr. Gore","1","Need to figure out how to expand macros","Yes"],
-    ["Loops not working correctly","16","There is an issue with the way the processor does the thing. Need to fix this.","Yes"],
+    ["Loops not working correctly","10","There is an issue with the way the processor does the thing. Need to fix this.","Yes"],
     ["Small bug introduced with code dealing with loop processing","12","Loops should not be detected when keywords are in a string","Yes"],
     ["Write OS X installer","3","Small adjustments here and there","Yes"],
     ["Publish gem to ruby gems","4","gem includes executable","Yes"],
-    ["Publish rubylatex package to CTAN","2","Initial version was denied due to improper \\LaTeX\\ documentation; may not pursue this","No"],
+    ["Publish rubylatex package to CTAN","2","Initial version was denied due to improper \\LaTeX\\ documentation; may not pursue this","Yes"]
+]
+
+tableu2 = [
+    ["Task","Hours","Notes","Done"],
     ["Create documentation","6","working on this when I have time","No"],
     ["Create documentation","4","working on this when I have time","No"],
     ["Create documentation","5","working on this when I have time","No"],
-    ["Create documentation","5","working on this when I have time","No"]
+    ["Create documentation","5","working on this when I have time","No"],
+    ["Work on poster","10","Poster is done now, may add more content later","Yes"],
+    ["Organize logs into rbtex document","2","Used the project to do this","Yes"]
 ]
 
 row = 0
@@ -52,10 +57,25 @@ tableu.each do |row|
         row = row + 1
     end
 end
+row = 0
+tableu2.each do |row|
+    if row != 0
+        i = 0
+        row.each do |elem|
+            if i == 1
+                total = total + elem.to_f
+            end
+            i = i + 1
+        end
+    else
+        row = row + 1
+    end
+end
 
 tt = Tex::Table.new tableu, true
-tts = tt.create
-Tex.print(Tex.center(tts))
+Tex.print(Tex.center(tt.create))
+tt = Tex::Table.new tableu2, true
+Tex.print(Tex.center(tt.create))
 Tex.n
 Tex.print("Total number of hours: #{total}")
 \end{rbtex}

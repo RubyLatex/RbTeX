@@ -72,7 +72,7 @@ module Tex
         end
 
         def create
-            pme = "\\begin{#{@tabx ? "longtabu" : "tabular"}}#{@tabx ? "{\\textwidth}" : ""}{|"
+            pme = "\\begin{#{@tabx ? "tabularx" : "tabular"}}#{@tabx ? "{\\textwidth}" : ""}{|"
             i = 0
             while i < @array[0].length
                 pme << "#{@tabx ? "X|" : "c|"}"
@@ -91,7 +91,7 @@ module Tex
                 end
                 pme << "\\\\ "
             end
-            pme << "\\hline \\end{#{@tabx ? "longtabu" : "tabular"}}"
+            pme << "\\hline \\end{#{@tabx ? "tabularx" : "tabular"}}"
             return pme
         end
 

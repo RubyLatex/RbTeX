@@ -5,6 +5,11 @@
 \usepackage{listings}
 \usepackage{graphicx}
 \usepackage{minted}
+\usepackage{hyperref}
+\usepackage{url}
+
+\usepackage[backend=bibtex, style=numeric]{biblatex}
+\addbibresource{pb.bib}
 
 \usepackage{tikz}
 \usetikzlibrary{automata,positioning}
@@ -28,18 +33,34 @@
 
 \column{0.25}
 \block{Abstract}{
+$\RbTeX$ is a package that provides support for running Ruby code during compilation of \LaTeX\
+documents. \LaTeX\ is generally regarded as a static language (although packages that provide
+dynamic features do exist), but Ruby adds a very powerful set of features and libraries that can
+be used inside of \LaTeX, analogous to the relationship between JavaScript and HTML.
+}
+
+\block{Motivation}{
 Modern \LaTeX\ distributions include a tool called \luatex\ that allows users to
 dynamically produce content via use of Lua code. Unfortunately, the Lua standard libraries do not
 have as much functionality as other popular scripting languages, such as Ruby. The goal of this
 project is to incorporate Ruby into \LaTeX\ in a manner similar to \luatex, but with the power and
-simplicity of Ruby over Lua.
+simplicity of Ruby over Lua.\\
+
+Ruby was chosen over various other languages due to its widespread availability, its powerful yet
+simple package manager, \inlinecode{gem}, and its easy to understand syntax. Statements in other
+scripting languages, such as Python, require specific indentations or are very verbose. Ruby
+manages to cut away a lot of the code that needs to be written in other languages. Ruby is also
+built to support the modern web; as a result many of the gems provide one-line access to online
+APIs and endpoints that may be of interest to mathematicians, scientists, and anyone else who uses
+\LaTeX.
 }
 
 \block{The $\RbTeX$ Package}{
 Since the program unites Ruby and \LaTeX, it is hard to find a common place to host the package.
-The policies of RubyGems are more lax than CTAN, so the package lives as a gem. However, this is not
-enough by itself. Since the \inlinecode{rbtex} gem only comes with the ruby side, users need to
-grab the install script from the official repository and run that instead. The install script
+RubyGems's policies are more lax than CTAN's, so the package is hosted as a gem. However, the gem is
+not enough by itself (although it is possible to have just the gem and to require it in a user's
+standalone Ruby project). Since the \inlinecode{rbtex} gem only comes with the ruby side, users need
+to get the install script from the official repository and run that instead. The install script
 provides users with both the Ruby gem \textit{and} the \LaTeX\ package. Users who want this package
 need to have an up-to-date Ruby version and \TeX Live.
 }
@@ -51,7 +72,7 @@ need to have an up-to-date Ruby version and \TeX Live.
 \subsection*{In Rubylatex\hspace{16cm}In Lualatex}
 \inputminted[fontsize=\small,linenos]{ruby}{wc.rb}
 \vspace{-6.3cm}
-\inputminted[xleftmargin=23cm,fontsize=\small,linenos]{lua}{wc.lua}
+\inputminted[xleftmargin=23cm,fontsize=\small,linenos]{ruby}{wc.lua}
 
 \section{Grabbing Data from Twitter}
 \inputminted[fontsize=\small]{ruby}{twit.rb}
@@ -94,12 +115,34 @@ In order to correctly compile a document using $\RbTeX$, one must run the \rbtex
 Unlike many \LaTeX\ packages, $\RbTeX$ runs outside of \TeX. This allows a user to have the ability
 to do what they are used to, rather than having to obey the rules of \LaTeX. In fact, the \rbtexc\
 program is removed from Ruby as well. The \rbtexc\ program parses both Ruby code and \LaTeX\ code
-into it's own code, which it is then able to parse back into \LaTeX\ code.
+into it's own code, which it is then able to parse back into \LaTeX\ code. In case a user forgets
+to use \inlinecode{pdflatex} and uses \rbtexc\ on a \TeX\ document not containing any
+\inlinecode{rbtex} environements, \rbtexc\ just runs \inlinecode{pdflatex} and skips all the extra
+steps.
 }
 
 \column{0.25}
-\block{References}{
 
+\block{Basic Usage}{
+In order to use $\RbTeX$, a user needs to do three things:
+\begin{enumerate}
+\item Include the \inlinecode{rubylatex} package in their \TeX\ document.
+\item Wrap all Ruby code in \inlinecode{rbtex} environments.
+\item Run \rbtexc\ in the Terminal/Command Line to compile the document and produce a pdf.
+\end{enumerate}
+\noindent\\
+A minimal working example look something like this:\\
+\inputminted[fontsize=\small,linenos,xleftmargin=0.5cm]{tex}{mwe.tex}
+\noindent\\
+The result:
+\begin{center}
+\includegraphics[scale=2]{mew.png}
+\end{center}
+}
+
+\block{References}{
+\nocite{*}
+\printbibliography
 }
 
 \end{columns}

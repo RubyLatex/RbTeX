@@ -9,7 +9,7 @@ require 'table_flipper'
 # rblatex -- The RbTeX processor.
 #
 # @author  Steven Rosendahl
-# @version 0.0.2
+# @version 0.1.6
 #
 # This is the processor for the RbTeX package. This processor does not handle
 # any of the TeX heavy lifting; rather, the processor only looks for certain
@@ -42,6 +42,8 @@ require 'table_flipper'
 
 TEX_ENV_01_S = '\\begin{rbtex}'
 TEX_ENV_01_E = '\\end{rbtex}'
+
+VERSION='0.1.6'
 
 RB_REQUIRE = "require 'rbtex'"
 
@@ -98,7 +100,7 @@ $console = ""
 def main
     if TEX_FILE
         result = 0
-        puts 'Welcome to rblatex v0.0.2!'
+        puts "Welcome to rblatex v#{VERSION}!"
         puts "Beginning to preprocess #{TEX_FILE}"
         result = preprocess
         if result == 0
