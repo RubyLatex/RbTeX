@@ -4,6 +4,26 @@
 require 'colorize'
 require 'table_flipper'
 
+ASCII_LOGO=%Q(
+                    bbbbbbbb
+RRRRRRRRRRRRRRRRR   b::::::b         TTTTTTTTTTTTTTTTTTTTTTT                XXXXXXX       XXXXXXX
+R::::::::::::::::R  b::::::b         T:::::::::::::::::::::T                X:::::X       X:::::X
+R::::::RRRRRR:::::R b::::::b         T:::::::::::::::::::::T                X:::::X       X:::::X
+RR:::::R     R:::::R b:::::b         T:::::TT:::::::TT:::::T                X::::::X     X::::::X
+  R::::R     R:::::R b:::::bbbbbbbbb TTTTTT  T:::::T  TTTTTT eeeeeeeeeeee   XXX:::::X   X:::::XXX
+  R::::R     R:::::R b::::::::::::::bb       T:::::T       ee::::::::::::ee    X:::::X X:::::X
+  R::::RRRRRR:::::R  b::::::::::::::::b      T:::::T      e::::::eeeee:::::ee   X:::::X:::::X
+  R:::::::::::::RR   b:::::bbbbb:::::::b     T:::::T     e::::::e     e:::::e    X:::::::::X
+  R::::RRRRRR:::::R  b:::::b    b::::::b     T:::::T     e:::::::eeeee::::::e    X:::::::::X
+  R::::R     R:::::R b:::::b     b:::::b     T:::::T     e:::::::::::::::::e    X:::::X:::::X
+  R::::R     R:::::R b:::::b     b:::::b     T:::::T     e::::::eeeeeeeeeee    X:::::X X:::::X
+  R::::R     R:::::R b:::::b     b:::::b     T:::::T     e:::::::e          XXX:::::X   X:::::XXX
+RR:::::R     R:::::R b:::::bbbbbb::::::b   TT:::::::TT   e::::::::e         X::::::X     X::::::X
+R::::::R     R:::::R b::::::::::::::::b    T:::::::::T    e::::::::eeeeeeee X:::::X       X:::::X
+R::::::R     R:::::R b:::::::::::::::b     T:::::::::T     ee:::::::::::::e X:::::X       X:::::X
+RRRRRRRR     RRRRRRR bbbbbbbbbbbbbbbb      TTTTTTTTTTT       eeeeeeeeeeeeee XXXXXXX       XXXXXXX
+)
+
 ################################################################################
 #
 # rblatex -- The RbTeX processor.
@@ -100,6 +120,7 @@ $console = ""
 def main
     if TEX_FILE
         result = 0
+        puts ASCII_LOGO
         puts "Welcome to rblatex v#{VERSION}!"
         puts "Beginning to preprocess #{TEX_FILE}"
         result = preprocess
