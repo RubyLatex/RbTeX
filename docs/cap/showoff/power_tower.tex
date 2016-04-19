@@ -1,0 +1,25 @@
+\documentclass{article}
+\usepackage{rubylatex}
+
+\begin{document}
+You can generate a power tower using $\RbTeX$ !
+\begin{rbtex}
+    def printGrahm num
+        tstr = "#{num}^{"
+
+        i = 0
+        while i < 64
+            tstr << "#{num}^{"
+            i = i + 1
+        end
+        tstr << "#{num}"
+        while i >= 0
+            tstr << "}"
+            i = i - 1
+        end
+        Tex.print Tex.cmath(tstr)
+    end
+
+    printGrahm 3
+\end{rbtex}
+\end{document}

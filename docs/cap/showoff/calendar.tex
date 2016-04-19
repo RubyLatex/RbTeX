@@ -1,0 +1,56 @@
+\documentclass{hw}
+\usepackage{rubylatex}
+
+% \newcolumntype{C}[1]{>{\centering}m{#1}}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\begin{document}
+
+\begin{rbtex}
+overallTime = Time.now
+monthName = overallTime.strftime("%B")
+Tex.print("\\section*{#{monthName}, #{overallTime.year}}")
+
+def dayOfWeek(id)
+    return case (id % 7)
+        when 0
+            "Monday"
+        when 1
+            "Tuesday"
+        when 2
+            "Wednesday"
+        when 3
+            "Thursday"
+        when 4
+            "Friday"
+        when 5
+            "Saturday"
+        else
+            "Sunday"
+        end
+end
+\end{rbtex}
+\begin{tabular}{|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
+\hline
+\begin{rbtex}
+i = 1
+nlnstr = "\\\\ \\hline"
+7.times {
+    Tex.print("#{dayOfWeek(i+3)}#{i % 7 == 0 ? nlnstr : '&'}")
+    i = i + 1
+}
+i = 1
+days = 31
+nlnstr = "\\\\[2cm] \\hline"
+5.times {
+    7.times {
+        Tex.print("#{i <= days ? i : ''}#{i % 7 == 0 ? nlnstr : '&'} ")
+        i = i + 1
+    }
+}
+\end{rbtex}
+\end{tabular}
+
+\end{document}
